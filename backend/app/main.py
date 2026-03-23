@@ -4,7 +4,7 @@ import os
 
 from backend.config.logger import logger
 from backend.config.database import client, close_db_connection
-from backend.app.routes.Employee_routes import router as employee_router
+from backend.app.routes.employee_routes import router as employee_router
 
 
 @asynccontextmanager

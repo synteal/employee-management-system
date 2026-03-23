@@ -1,5 +1,5 @@
-from backend.app.controller.Employee_controller import fetch_all_employees
-from backend.app.schemas.Employee_schema import EmployeeResponse
+from backend.app.controller.employee_controller import fetch_all_employees
+from backend.app.schemas.employee_schema import EmployeeResponse
 from fastapi import APIRouter
 
 

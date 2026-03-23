@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Employee Management System API", version="1.0", lifespan=lifespan)
 
 app.include_router(employee_router, prefix="/employees")
-
+                                                                        
 @app.get("/health")
 async def health_check():
     return {"message": "OK"}

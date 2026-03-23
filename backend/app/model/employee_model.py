@@ -11,5 +11,11 @@ def create_employee(employee: EmployeeCreate) -> EmployeeResponse:
     doc["_id"] = result.inserted_id
     return EmployeeResponse(**doc)
 
+def get_employee_by_id(employee_id: str) -> EmployeeResponse:
+    employee = employees_collection.find_one({"employeeId": employee_id})
+    if employee:
+        return EmployeeResponse(**employee)
+    return None
+
 def get_all_employees() -> list[dict]:
     return list(employees_collection.find())

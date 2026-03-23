@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import StrEnum
 from typing import Annotated
 from pydantic import BaseModel, EmailStr, Field, BeforeValidator, ConfigDict
@@ -21,8 +21,6 @@ class EmployeeBase(BaseModel):
     department: str
     yearlySalary: int
     status: EmployeeStatus = EmployeeStatus.ACTIVE
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class EmployeeCreate(EmployeeBase):
     pass
@@ -30,6 +28,8 @@ class EmployeeCreate(EmployeeBase):
 class EmployeeResponse(EmployeeBase):
     # Notes: MongoDb will return _id, but that'd be inappropriate to return for a json API.
     id: PyObjectId = Field(alias="_id") 
+    createdAt: datetime
+    updatedAt: datetime
     
     model_config = ConfigDict(
         populate_by_name=True, # To allow object creation with either "_id" or "id"

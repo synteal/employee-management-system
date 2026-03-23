@@ -4,6 +4,7 @@ import os
 
 from backend.config.logger import logger
 from backend.config.database import client, close_db_connection
+from backend.app.routes.Employee_routes import router as employee_router
 
 
 @asynccontextmanager
@@ -30,7 +31,9 @@ async def lifespan(app: FastAPI):
 # === FastApi setup ===
 app = FastAPI(title="Employee Management System API", version="1.0", lifespan=lifespan)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+app.include_router(employee_router, prefix="/employees")
+
+@app.get("/health")
+async def health_check():
+    return {"message": "OK"}
 

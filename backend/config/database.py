@@ -13,6 +13,7 @@ client = MongoClient(
 )
 
 db = client[os.environ["MONGO_DB_NAME"]]
+employees_collection = db["employees"]
 
 def close_db_connection():
     """

@@ -1,22 +1,26 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import StrEnum
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, Field
 
 class EmployeeStatus(StrEnum):
     ACTIVE = "active"
     DISABLED = "disabled"
     ON_LEAVE = "on_leave"
 
-class Employee(BaseModel):
+class EmployeeBase(BaseModel):
     employeeId: str
     name: str
     email: EmailStr
     role: str
     department: str
     yearly_salary: int
-    status: EmployeeStatus
+    status: EmployeeStatus = EmployeeStatus.ACTIVE
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class EmployeeResponse(BaseModel):
+class EmployeeCreate(EmployeeBase):
+    pass
+
+class EmployeeResponse(EmployeeBase):
     id: str
-    createdAt: datetime
     

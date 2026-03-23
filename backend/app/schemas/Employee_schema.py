@@ -13,7 +13,7 @@ class EmployeeBase(BaseModel):
     email: EmailStr
     role: str
     department: str
-    yearly_salary: int
+    yearlySalary: int
     status: EmployeeStatus = EmployeeStatus.ACTIVE
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

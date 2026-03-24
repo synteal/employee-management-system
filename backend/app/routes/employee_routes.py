@@ -12,7 +12,7 @@ router = APIRouter()
 def get_employees(db: Database = Depends(get_db)):
     return fetch_all_employees(db)    
 
-@router.get("/employee/{employee_id}", response_model=EmployeeResponse)
+@router.get("/{employee_id}", response_model=EmployeeResponse)
 def get_employee(employee_id: str, db: Database = Depends(get_db)):
     return fetch_employee_by_id(employee_id, db)
 
@@ -20,14 +20,14 @@ def get_employee(employee_id: str, db: Database = Depends(get_db)):
 def get_employees_by_dept(department: str, db: Database = Depends(get_db)):
     return fetch_employees_by_department(department, db)
 
-@router.post("/employee", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
 def post_employee(employee: EmployeeCreate, db: Database = Depends(get_db)):
     return add_employee(employee, db)
 
-@router.put("/employee/{employee_id}", response_model=EmployeeResponse)
+@router.put("/{employee_id}", response_model=EmployeeResponse)
 def put_employee(employee_id: str, employee_update: EmployeeUpdate, db: Database = Depends(get_db)):
     return edit_employee(employee_id, employee_update, db)
 
-@router.delete("/employee/{employee_id}")
+@router.delete("/{employee_id}")
 def delete_employee(employee_id: str, db: Database = Depends(get_db)):
     return remove_employee(employee_id, db)

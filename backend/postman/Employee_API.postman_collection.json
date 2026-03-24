@@ -1,0 +1,229 @@
+{
+	"info": {
+		"name": "Employee API Automation (CRUD)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 - Get All Employees",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/employees",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"employees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 - Create Employee",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"if (pm.response.code === 201) {",
+							"    let jsonData = pm.response.json();",
+							"    pm.test(\"Response has employeeId property\", function () {",
+							"        pm.expect(jsonData).to.have.property(\"employeeId\");",
+							"    });",
+							"    // Save employeeId for next requests in the chain",
+							"    pm.collectionVariables.set(\"current_employee_id\", jsonData.employeeId);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"employeeId\": \"EMP-1001\",\n  \"name\": \"Postman Test User\",\n  \"email\": \"postman.test@example.com\",\n  \"role\": \"Software Engineer\",\n  \"department\": \"Engineering\",\n  \"yearlySalary\": 120000,\n  \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/employees",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"employees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - Get Employee By ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"pm.test(\"Returned employee matches created ID\", function () {",
+							"    pm.expect(jsonData.employeeId).to.eql(pm.collectionVariables.get(\"current_employee_id\"));",
+							"});",
+							"pm.test(\"Correct data was returned\", function () {",
+							"    pm.expect(jsonData.name).to.eql(\"Postman Test User\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/employees/{{current_employee_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"employees",
+						"{{current_employee_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "04 - Update Employee",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"pm.test(\"Salary was updated correctly\", function () {",
+							"    pm.expect(jsonData.yearlySalary).to.eql(135000);",
+							"});",
+							"pm.test(\"Role was updated correctly\", function () {",
+							"    pm.expect(jsonData.role).to.eql(\"Senior Software Engineer\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"yearlySalary\": 135000,\n  \"role\": \"Senior Software Engineer\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/employees/{{current_employee_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"employees",
+						"{{current_employee_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "05 - Delete Employee",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 204 (Delete successful)\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/employees/{{current_employee_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"employees",
+						"{{current_employee_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06 - Verify Deletion",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 Not Found (Employee is gone)\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/employees/{{current_employee_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"employees",
+						"{{current_employee_id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "current_employee_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

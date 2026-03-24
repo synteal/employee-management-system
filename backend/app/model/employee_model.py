@@ -44,3 +44,11 @@ def update_employee(employee_id: str, employee_update: EmployeeUpdate, db: Datab
 def delete_employee(employee_id: str, db: Database) -> bool:
     result = db["employees"].delete_one({"employeeId": employee_id})
     return result.deleted_count > 0
+
+def get_employee_summary(db: Database) -> dict:
+    total = db["employees"].count_documents({})
+    departments = db["employees"].distinct("department")
+    return {
+        "total_employees": total,
+        "departments": departments
+    }

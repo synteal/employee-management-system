@@ -43,4 +43,8 @@ class EmployeeResponse(EmployeeBase):
         populate_by_name=True, # To allow object creation with either "_id" or "id"
         arbitrary_types_allowed=True # To avoid Pydantic errors about ObjectId
     )
+
+class EmployeeSummary(BaseModel):
+    total_employees: int
+    departments: list[str]
     

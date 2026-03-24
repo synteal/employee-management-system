@@ -39,6 +39,25 @@ def test_employee():
         "yearlySalary": 65000
     }
 
+@pytest.fixture(scope="module")
+def admin_headers(client):
+    """
+    Fixture: Returns headers for an admin user.
+    """
+    response = client.post("/auth/login", data={"username": "admin", "password": "admin123"})
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture(scope="module")
+def user_headers(client):
+    """
+    Fixture: Returns headers for a regular user.
+    """
+    response = client.post("/auth/login", data={"username": "user", "password": "user123"})
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
 @pytest.fixture(scope="module", autouse=True)
 def clean_database(db_session, test_employee):
     """

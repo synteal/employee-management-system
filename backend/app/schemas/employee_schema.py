@@ -16,10 +16,10 @@ class EmployeeStatus(StrEnum):
 class EmployeeBase(BaseModel):
     employeeId: str
     name: str
-    email: EmailStr
+    email: EmailStr 
     role: str
     department: str
-    yearlySalary: int
+    yearlySalary: int 
     status: EmployeeStatus = EmployeeStatus.ACTIVE
 
 class EmployeeCreate(EmployeeBase):
@@ -36,8 +36,8 @@ class EmployeeUpdate(BaseModel):
 class EmployeeResponse(EmployeeBase):
     # Notes: MongoDb will return _id, but that'd be inappropriate to return for a json API.
     id: PyObjectId = Field(alias="_id") 
-    createdAt: datetime
-    updatedAt: datetime
+    createdAt: datetime | None = None
+    updatedAt: datetime | None = None
     
     model_config = ConfigDict(
         populate_by_name=True, # To allow object creation with either "_id" or "id"

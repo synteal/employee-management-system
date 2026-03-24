@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-import os
 
 from backend.config.logger import logger
-from backend.config.database import client, close_db_connection
+from backend.config.database import init_db, close_db_connection
 from backend.app.routes.employee_routes import router as employee_router
 
 
@@ -13,8 +12,7 @@ async def lifespan(app: FastAPI):
     Asynchronous context manager to manage the application's lifecycle.
     """
     try:
-        # Check database connection with a lighter 'ping' command
-        client.admin.command('ping')
+        init_db()
         logger.info("Connected to MongoDB successfully.")
         logger.info("Starting up the Employee Management System API")
         yield

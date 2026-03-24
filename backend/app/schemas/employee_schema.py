@@ -25,6 +25,14 @@ class EmployeeBase(BaseModel):
 class EmployeeCreate(EmployeeBase):
     pass
 
+class EmployeeUpdate(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+    role: str | None = None
+    department: str | None = None
+    yearlySalary: int | None = None
+    status: EmployeeStatus | None = None
+
 class EmployeeResponse(EmployeeBase):
     # Notes: MongoDb will return _id, but that'd be inappropriate to return for a json API.
     id: PyObjectId = Field(alias="_id") 

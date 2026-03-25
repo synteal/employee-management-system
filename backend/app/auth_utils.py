@@ -10,6 +10,7 @@ from backend.app.schemas.auth_schema import TokenData
 SECRET_KEY = "teaching-secret-key-keep-it-secret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+LOGIN_RATE_LIMIT = "5/minute"
 
 # Hardcoded users for teaching purposes
 USERS_DB = {

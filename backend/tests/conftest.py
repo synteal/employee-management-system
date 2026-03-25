@@ -2,6 +2,10 @@ import pytest
 from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.config.database import get_db, close_db_connection
+from backend.app import auth_utils
+
+# Increase rate limit for tests to avoid collisions
+auth_utils.LOGIN_RATE_LIMIT = "100/minute"
 
 @pytest.fixture(scope="module")
 def client():

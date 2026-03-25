@@ -2,8 +2,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
-import { vi } from 'vitest';
-import Login from './Login'; // Assuming you will create this component
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import Login from './Login';
 
 // 1. Mock the libraries we depend on
 // We use vi.mock to intercept calls to 'axios' and React Router's hooks

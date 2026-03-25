@@ -69,9 +69,9 @@ def test_get_summary(client: TestClient, db_session, user_headers):
     db_session["employees"].delete_many({}) # Clean start for this test
     
     employees = [
-        {"employeeId": "TEST001", "name": "User 1", "email": "u1@ex.com", "role": "Dev", "department": "IT", "yearlySalary": 50000, "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
-        {"employeeId": "TEST002", "name": "User 2", "email": "u2@ex.com", "role": "Dev", "department": "IT", "yearlySalary": 50000, "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
-        {"employeeId": "TEST003", "name": "User 3", "email": "u3@ex.com", "role": "HR", "department": "HR", "yearlySalary": 50000, "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
+        {"employeeId": "TEST001", "name": "User 1", "email": "u1@ex.com", "role": "Dev", "department": "IT", "yearlySalary": 50000, "status": "active", "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
+        {"employeeId": "TEST002", "name": "User 2", "email": "u2@ex.com", "role": "Dev", "department": "IT", "yearlySalary": 50000, "status": "active", "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
+        {"employeeId": "TEST003", "name": "User 3", "email": "u3@ex.com", "role": "HR", "department": "HR", "yearlySalary": 50000, "status": "disabled", "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
     ]
     db_session["employees"].insert_many(employees)
     
@@ -80,7 +80,49 @@ def test_get_summary(client: TestClient, db_session, user_headers):
     data = response.json()
     
     assert data["total_employees"] == 3
-    assert set(data["departments"]) == {"IT", "HR"}
+    assert data["active_employees"] == 2
+    assert data["department_count"] == 2
+    assert data["department_distribution"] == {"IT": 2, "HR": 1}
     
     # Cleanup
     db_session["employees"].delete_many({"employeeId": {"$in": ["TEST001", "TEST002", "TEST003"]}})
+
+def test_search_employees(client: TestClient, db_session, user_headers):
+    # Setup test data
+    db_session["employees"].delete_many({})
+    employees = [
+        {"employeeId": "S001", "name": "Alice Smith", "email": "alice@ex.com", "role": "Dev", "department": "Engineering", "yearlySalary": 60000, "status": "active", "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
+        {"employeeId": "S002", "name": "Bob Jones", "email": "bob@ex.com", "role": "Dev", "department": "Engineering", "yearlySalary": 65000, "status": "active", "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
+        {"employeeId": "S003", "name": "Charlie Brown", "email": "charlie@ex.com", "role": "HR", "department": "HR", "yearlySalary": 55000, "status": "active", "createdAt": "2024-01-01T00:00:00", "updatedAt": "2024-01-01T00:00:00"},
+    ]
+    db_session["employees"].insert_many(employees)
+
+    # Test search by name (partial)
+    response = client.get("/employees/search?name=Alice", headers=user_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["name"] == "Alice Smith"
+
+    # Test search by department
+    response = client.get("/employees/search?department=Engineering", headers=user_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert all(emp["department"] == "Engineering" for emp in data)
+
+    # Test search by both
+    response = client.get("/employees/search?name=Bob&department=Engineering", headers=user_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["name"] == "Bob Jones"
+
+    # Test search with no results
+    response = client.get("/employees/search?name=Nonexistent", headers=user_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0
+
+    # Cleanup
+    db_session["employees"].delete_many({"employeeId": {"$in": ["S001", "S002", "S003"]}})

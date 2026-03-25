@@ -46,5 +46,7 @@ class EmployeeResponse(EmployeeBase):
 
 class EmployeeSummary(BaseModel):
     total_employees: int
-    departments: list[str]
+    active_employees: int
+    department_count: int
+    department_distribution: dict[str, int]
     

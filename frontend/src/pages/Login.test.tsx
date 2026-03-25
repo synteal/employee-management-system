@@ -20,6 +20,8 @@ describe('Login Page', () => {
     // Clear mocks and localStorage before each test
     vi.clearAllMocks();
     localStorage.clear();
+    // Default mock for isAxiosError - returns true if there's a response object
+    mockedAxios.isAxiosError.mockImplementation((err: any) => !!err.response);
   });
 
   it('1. should render the login form correctly', () => {
@@ -80,10 +82,14 @@ describe('Login Page', () => {
     // Wait for the asynchronous actions to complete
     await waitFor(() => {
       // Ensure Axios was called with the right endpoint and payload
-      expect(mockedAxios.post).toHaveBeenCalledWith('/api/login', {
-        email: 'admin@example.com',
-        password: 'password123'
-      });
+      const expectedUrl = `${import.meta.env.VITE_API_URL}/auth/login`;
+      expect(mockedAxios.post).toHaveBeenCalledWith(expectedUrl, expect.any(URLSearchParams));
+      
+      // Verify the content of the URLSearchParams
+      const callArgs = mockedAxios.post.mock.calls[0];
+      const params = callArgs[1] as URLSearchParams;
+      expect(params.get('username')).toBe('admin@example.com');
+      expect(params.get('password')).toBe('password123');
 
       // Ensure localStorage was updated correctly
       expect(localStorage.getItem('token')).toBe('fake-jwt-token');

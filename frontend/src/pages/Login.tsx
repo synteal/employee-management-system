@@ -21,15 +21,29 @@ const Login: React.FC = () => {
     setErrors({});
     setLoading(true);
     try {
-      const response = await axios.post("/api/login", { email, password });
+      const apiBaseUrl = import.meta.env.VITE_API_URL || "";
+      const params = new URLSearchParams();
+      params.append("username", email);
+      params.append("password", password);
+      const response = await axios.post(`${apiBaseUrl}/auth/login`, params);
       const { access_token, role } = response.data;
       localStorage.setItem("token", access_token);
       localStorage.setItem("role", role);
       navigate("/");
     } catch (err: unknown) {
-      let backendError = "An error occurred";
+      console.error("Login error:", err);
+      let backendError: string = "An error occurred";
       if (axios.isAxiosError(err) && err.response?.data?.detail) {
-        backendError = err.response.data.detail;
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          // If it's an array of error objects, join their messages
+          backendError = detail.map((d: any) => d.msg || JSON.stringify(d)).join("; ");
+        } else if (typeof detail === "object") {
+          // If it's an object, try to get a message or stringify
+          backendError = detail.msg || JSON.stringify(detail);
+        } else {
+          backendError = String(detail);
+        }
       }
       setErrors({ backend: backendError });
     } finally {

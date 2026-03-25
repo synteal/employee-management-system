@@ -11,8 +11,8 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors: { email?: string; password?: string } = {};
-    if (!user) validationErrors.email = "email is required";
+    const validationErrors: { user?: string; password?: string } = {};
+    if (!user) validationErrors.user = "username is required";
     if (!password) validationErrors.password = "password is required";
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);

@@ -27,8 +27,8 @@ describe('Login Page', () => {
   it('1. should render the login form correctly', () => {
     render(<Login />);
     
-    // Check if the email input, password input, and submit button exist
-    expect(screen.getByPlaceholderText(/email/i)).toBeInTheDocument();
+    // Check if the username input, password input, and submit button exist
+    expect(screen.getByPlaceholderText(/username/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
   });
@@ -42,7 +42,7 @@ describe('Login Page', () => {
     await user.click(submitBtn);
 
     // Expect validation messages (assuming the component handles UI validation)
-    expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/username is required/i)).toBeInTheDocument();
     expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
   });
 
@@ -56,7 +56,7 @@ describe('Login Page', () => {
     });
 
     // Fill in the form
-    await user.type(screen.getByPlaceholderText(/email/i), 'wrong@example.com');
+    await user.type(screen.getByPlaceholderText(/username/i), 'wronguser');
     await user.type(screen.getByPlaceholderText(/password/i), 'wrongpass');
     await user.click(screen.getByRole('button', { name: /login/i }));
 
@@ -75,7 +75,7 @@ describe('Login Page', () => {
     mockedAxios.post.mockResolvedValueOnce(mockResponse);
 
     // Fill in the form
-    await user.type(screen.getByPlaceholderText(/email/i), 'admin@example.com');
+    await user.type(screen.getByPlaceholderText(/username/i), 'admin');
     await user.type(screen.getByPlaceholderText(/password/i), 'password123');
     await user.click(screen.getByRole('button', { name: /login/i }));
 
@@ -88,7 +88,7 @@ describe('Login Page', () => {
       // Verify the content of the URLSearchParams
       const callArgs = mockedAxios.post.mock.calls[0];
       const params = callArgs[1] as URLSearchParams;
-      expect(params.get('username')).toBe('admin@example.com');
+      expect(params.get('username')).toBe('admin');
       expect(params.get('password')).toBe('password123');
 
       // Ensure localStorage was updated correctly

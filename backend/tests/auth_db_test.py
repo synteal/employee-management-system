@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 from backend.app.schemas.user_schema import UserCreate
 from backend.app.model.user_model import create_user

@@ -1,4 +1,4 @@
-from backend.app.model.employee_model import get_all_employees, create_employee, update_employee, delete_employee, get_employee_by_id, get_employees_by_department, get_employee_summary
+from backend.app.model.employee_model import get_all_employees, create_employee, update_employee, delete_employee, get_employee_by_id, get_employees_by_department, get_employee_summary, search_employees
 from backend.app.schemas.employee_schema import EmployeeCreate, EmployeeUpdate
 from fastapi import HTTPException, status
 from pymongo.synchronous.database import Database
@@ -8,6 +8,9 @@ def fetch_all_employees(db: Database):
 
 def fetch_employee_summary(db: Database):
     return get_employee_summary(db)
+
+def fetch_search_employees(name: str | None, department: str | None, db: Database):
+    return search_employees(name, department, db)
 
 def add_employee(employee: EmployeeCreate, db: Database):
     return create_employee(employee, db)

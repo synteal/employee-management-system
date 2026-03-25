@@ -1,4 +1,4 @@
-from backend.app.controller.employee_controller import fetch_all_employees, add_employee, edit_employee, remove_employee, fetch_employee_by_id, fetch_employees_by_department, fetch_employee_summary
+from backend.app.controller.employee_controller import fetch_all_employees, add_employee, edit_employee, remove_employee, fetch_employee_by_id, fetch_employees_by_department, fetch_employee_summary, fetch_search_employees
 from backend.app.schemas.employee_schema import EmployeeCreate, EmployeeResponse, EmployeeUpdate, EmployeeSummary
 from fastapi import APIRouter, status, Depends
 from pymongo.synchronous.database import Database
@@ -21,6 +21,10 @@ def get_employees(db: Database = Depends(get_db)):
 @router.get("/summary", response_model=EmployeeSummary, dependencies=[admin_or_user])
 def get_summary(db: Database = Depends(get_db)):
     return fetch_employee_summary(db)
+
+@router.get("/search", response_model=list[EmployeeResponse], dependencies=[admin_or_user])
+def search_employees_route(name: str | None = None, department: str | None = None, db: Database = Depends(get_db)):
+    return fetch_search_employees(name, department, db)
 
 @router.get("/{employee_id}", response_model=EmployeeResponse, dependencies=[admin_or_user])
 def get_employee(employee_id: str, db: Database = Depends(get_db)):

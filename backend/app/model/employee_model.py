@@ -2,6 +2,7 @@ from pymongo.synchronous.database import Database
 from backend.app.schemas.employee_schema import EmployeeCreate, EmployeeResponse, EmployeeUpdate
 from datetime import datetime, timezone
 from pymongo import ReturnDocument
+import re
 
 def create_employee(employee: EmployeeCreate, db: Database) -> EmployeeResponse:
     doc = employee.model_dump()
@@ -20,6 +21,14 @@ def get_employee_by_id(employee_id: str, db: Database) -> EmployeeResponse | Non
 
 def get_all_employees(db: Database) -> list[dict]:
     return list(db["employees"].find())
+
+def search_employees(name: str | None, department: str | None, db: Database) -> list[dict]:
+    query = {}
+    if name:
+        query["name"] = {"$regex": re.escape(name), "$options": "i"}
+    if department:
+        query["department"] = department
+    return list(db["employees"].find(query))
 
 def get_employees_by_department(department: str, db: Database) -> list[dict]:
     return list(db["employees"].find({"department": department}))
@@ -47,8 +56,17 @@ def delete_employee(employee_id: str, db: Database) -> bool:
 
 def get_employee_summary(db: Database) -> dict:
     total = db["employees"].count_documents({})
-    departments = db["employees"].distinct("department")
+    active = db["employees"].count_documents({"status": "active"})
+    
+    # Get department distribution
+    pipeline = [
+        {"$group": {"_id": "$department", "count": {"$sum": 1}}}
+    ]
+    distribution = {doc["_id"]: doc["count"] for doc in db["employees"].aggregate(pipeline)}
+    
     return {
         "total_employees": total,
-        "departments": departments
+        "active_employees": active,
+        "department_count": len(distribution),
+        "department_distribution": distribution
     }

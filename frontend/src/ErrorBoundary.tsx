@@ -1,4 +1,4 @@
-import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { Component, type ReactNode, type ErrorInfo } from "react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -21,13 +21,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can log the error to an error reporting service here
-    console.error('Uncaught error:', error, errorInfo);
+    console.error("Uncaught error:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>
+        <div style={{ padding: "2rem", textAlign: "center", color: "red" }}>
           <h2>Something went wrong.</h2>
           <pre>{this.state.error?.message}</pre>
         </div>

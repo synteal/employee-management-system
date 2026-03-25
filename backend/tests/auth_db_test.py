@@ -39,3 +39,39 @@ def test_login_invalid_credentials(client: TestClient):
     })
     assert response.status_code == 401
     assert response.json()["detail"] == "Incorrect username or password"
+
+def test_register_endpoint(client: TestClient, db_session):
+    username = "endpoint_reg_test"
+    # 1. Register a new user via API
+    response = client.post("/auth/register", json={
+        "username": username,
+        "password": "testpassword123",
+        "email": "endpoint@example.com",
+        "role": "user"
+    })
+    assert response.status_code == 200
+    assert response.json()["username"] == username
+    
+    # 2. Verify user exists in DB
+    user = db_session["users"].find_one({"username": username})
+    assert user is not None
+    
+    # 3. Verify activity log exists
+    log = db_session["activity_logs"].find_one({"username": username, "action": "register"})
+    assert log is not None
+    assert log["action"] == "register"
+    assert "ip_address" in log
+    
+    # 4. Try to register same username again
+    response = client.post("/auth/register", json={
+        "username": username,
+        "password": "differentpassword",
+        "email": "different@example.com",
+        "role": "user"
+    })
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Username already registered"
+    
+    # Cleanup
+    db_session["users"].delete_one({"username": username})
+    db_session["activity_logs"].delete_many({"username": username})

@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import os
 
 from backend.config.logger import logger
 from backend.config.database import init_db, close_db_connection
@@ -33,9 +35,22 @@ async def lifespan(app: FastAPI):
 
 # === FastApi setup ===
 app = FastAPI(title="Employee Management System API", version="1.0", lifespan=lifespan)
+
+# === Rate Limiting ===
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# === CORS setup ===
+allowed_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+allow_origins_list = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(employee_router, prefix="/employees")

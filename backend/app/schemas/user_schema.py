@@ -1,6 +1,6 @@
 from enum import StrEnum
 from typing import Optional
-from pydantic import EmailStr, BaseModel
+from pydantic import EmailStr, BaseModel, Field
 
 class UserRole(StrEnum):
     ADMIN = "admin"
@@ -11,7 +11,7 @@ class UserBase(BaseModel):
     email: Optional[EmailStr] = None
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=8)
 
 class UserResponse(UserBase):
     role: UserRole

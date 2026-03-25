@@ -4,8 +4,9 @@ from backend.app.main import app
 from backend.config.database import get_db, close_db_connection
 from backend.config import auth
 
-# Increase rate limit for tests to avoid collisions
-auth.LOGIN_RATE_LIMIT = "100/minute"
+# Disable rate limit for tests
+auth.LOGIN_RATE_LIMIT = "1000/minute"
+app.state.limiter.enabled = False
 
 @pytest.fixture(scope="module")
 def client():
@@ -44,21 +45,55 @@ def test_employee():
     }
 
 @pytest.fixture(scope="module")
-def admin_headers(client):
+def setup_test_users(db_session):
+    """
+    Fixture: Ensures that 'admin' and 'user' accounts exist in the database.
+    """
+    from backend.app.model.user_model import get_password_hash
+    from backend.app.schemas.user_schema import UserRole
+    
+    # Create admin
+    if not db_session["users"].find_one({"username": "admin"}):
+        db_session["users"].insert_one({
+            "username": "admin",
+            "hashed_password": get_password_hash("admin123"),
+            "email": "admin@example.com",
+            "role": UserRole.ADMIN
+        })
+    
+    # Create user
+    if not db_session["users"].find_one({"username": "user"}):
+        db_session["users"].insert_one({
+            "username": "user",
+            "hashed_password": get_password_hash("user123"),
+            "email": "user@example.com",
+            "role": UserRole.USER
+        })
+    
+    yield
+    
+    # No cleanup here as they are shared by many tests, but could be added if needed
+
+@pytest.fixture(scope="module")
+def admin_headers(client, setup_test_users):
     """
     Fixture: Returns headers for an admin user.
     """
     response = client.post("/auth/login", data={"username": "admin", "password": "admin123"})
-    token = response.json()["access_token"]
+    if response.status_code != 200:
+        raise Exception(f"Admin login failed: {response.json()}")
+    token = response.json().get("access_token")
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture(scope="module")
-def user_headers(client):
+def user_headers(client, setup_test_users):
     """
     Fixture: Returns headers for a regular user.
     """
     response = client.post("/auth/login", data={"username": "user", "password": "user123"})
-    token = response.json()["access_token"]
+    if response.status_code != 200:
+        raise Exception(f"User login failed: {response.json()}")
+    token = response.json().get("access_token")
     return {"Authorization": f"Bearer {token}"}
 
 

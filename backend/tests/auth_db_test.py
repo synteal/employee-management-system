@@ -42,6 +42,9 @@ def test_login_invalid_credentials(client: TestClient):
 
 def test_register_endpoint(client: TestClient, db_session):
     username = "endpoint_reg_test"
+    # Ensure user does not exist
+    db_session["users"].delete_one({"username": username})
+    
     # 1. Register a new user via API
     response = client.post("/auth/register", json={
         "username": username,
@@ -69,7 +72,7 @@ def test_register_endpoint(client: TestClient, db_session):
         "email": "different@example.com",
         "role": "user"
     })
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json()["detail"] == "Username already registered"
     
     # Cleanup

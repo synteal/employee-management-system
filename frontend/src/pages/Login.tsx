@@ -3,16 +3,16 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string; backend?: string }>({});
+  const [errors, setErrors] = useState<{ user?: string; password?: string; backend?: string }>({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors: { email?: string; password?: string } = {};
-    if (!email) validationErrors.email = "email is required";
+    if (!user) validationErrors.email = "email is required";
     if (!password) validationErrors.password = "password is required";
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -23,7 +23,7 @@ const Login: React.FC = () => {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_URL || "";
       const params = new URLSearchParams();
-      params.append("username", email);
+      params.append("username", user);
       params.append("password", password);
       const response = await axios.post(`${apiBaseUrl}/auth/login`, params);
       const { access_token, role } = response.data;
@@ -55,12 +55,12 @@ const Login: React.FC = () => {
     <form onSubmit={handleSubmit}>
       <div>
         <input
-          type="email"
-          placeholder="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
+          type="text"
+          placeholder="username"
+          value={user}
+          onChange={e => setUser(e.target.value)}
         />
-        {errors.email && <div>{errors.email}</div>}
+        {errors.user && <div>{errors.user}</div>}
       </div>
       <div>
         <input

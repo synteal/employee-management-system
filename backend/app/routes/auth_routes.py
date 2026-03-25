@@ -5,6 +5,9 @@ from backend.app.schemas.auth_schema import Token
 from backend.app.core.limiter import limiter
 from backend.config.auth import LOGIN_RATE_LIMIT
 
+from pymongo.synchronous.database import Database
+from backend.config.database import get_db
+
 router = APIRouter()
 
 def get_login_limit() -> str:
@@ -12,5 +15,9 @@ def get_login_limit() -> str:
 
 @router.post("/login", response_model=Token)
 @limiter.limit(get_login_limit)
-async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    return authenticate_user(form_data.username, form_data.password)
+async def login_for_access_token(
+    request: Request, 
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Database = Depends(get_db)
+):
+    return authenticate_user(form_data.username, form_data.password, db)

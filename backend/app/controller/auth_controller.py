@@ -2,18 +2,20 @@ from datetime import timedelta
 from fastapi import HTTPException, status
 from backend.config.auth import ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.app.auth_utils import (
-    USERS_DB,
     create_access_token,
     verify_password,
 )
+from pymongo.synchronous.database import Database
+from backend.app.model.user_model import get_user_by_username
 
-def authenticate_user(username: str, password: str) -> dict:
+def authenticate_user(username: str, password: str, db: Database) -> dict:
     """
-    Validates user credentials and returns a JWT token.
+    Validates user credentials against MongoDB and returns a JWT token.
     This is the 'Controller' logic.
     """
-    user = USERS_DB.get(username)
-    if not user or not verify_password(password, user["hashed_password"]):
+    user = get_user_by_username(username, db)
+    
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -22,7 +24,7 @@ def authenticate_user(username: str, password: str) -> dict:
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user["username"], "role": user["role"]},
+        data={"sub": user.username, "role": user.role},
         expires_delta=access_token_expires,
     )
     

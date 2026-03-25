@@ -39,6 +39,27 @@ def init_db():
         db = client[mongo_db_name]
         logger.info(f"Connected to MongoDB database {mongo_db_name} successfully.")
         employees_collection = db["employees"]
+        
+        # Seed users if needed
+        users_collection = db["users"]
+        if users_collection.count_documents({}) == 0:
+            from backend.app.auth_utils import get_password_hash
+            logger.info("Seeding initial users...")
+            users_collection.insert_many([
+                {
+                    "username": "admin",
+                    "hashed_password": get_password_hash("admin123"),
+                    "role": "admin",
+                    "email": "admin@example.com"
+                },
+                {
+                    "username": "user",
+                    "hashed_password": get_password_hash("user123"),
+                    "role": "user",
+                    "email": "user@example.com"
+                }
+            ])
+            logger.info("Initial users seeded successfully.")
 
 def get_db() -> Generator[Database, None, None]:
     """

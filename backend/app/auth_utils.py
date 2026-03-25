@@ -14,20 +14,6 @@ from backend.config.auth import (
 
 # Configuration derived from config/auth.py
 
-# Hardcoded users for teaching purposes
-USERS_DB = {
-    "admin": {
-        "username": "admin",
-        "hashed_password": "", # Will be populated below
-        "role": "admin",
-    },
-    "user": {
-        "username": "user",
-        "hashed_password": "", # Will be populated below
-        "role": "user",
-    },
-}
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -35,10 +21,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-# Initialize hardcoded passwords
-USERS_DB["admin"]["hashed_password"] = get_password_hash("admin123")
-USERS_DB["user"]["hashed_password"] = get_password_hash("user123")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()

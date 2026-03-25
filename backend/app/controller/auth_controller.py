@@ -1,7 +1,7 @@
 from datetime import timedelta
 from fastapi import HTTPException, status
+from backend.config.auth import ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.app.auth_utils import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
     USERS_DB,
     create_access_token,
     verify_password,

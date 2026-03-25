@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from backend.app.controller.auth_controller import authenticate_user
 from backend.app.schemas.auth_schema import Token
 from backend.app.core.limiter import limiter
-from backend.app.auth_utils import LOGIN_RATE_LIMIT
+from backend.config.auth import LOGIN_RATE_LIMIT
 
 router = APIRouter()
 

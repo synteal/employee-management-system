@@ -1,11 +1,11 @@
 from fastapi.testclient import TestClient
 from backend.app.main import app
-from backend.app import auth_utils
+from backend.config import auth
 
 def test_login_rate_limiting():
     # Set a specific limit for this test
     # We use 10 to be sure we have enough "room" if other tests used some
-    auth_utils.LOGIN_RATE_LIMIT = "10/minute"
+    auth.LOGIN_RATE_LIMIT = "10/minute"
     client = TestClient(app)
     
     # Attempt logins until we hit the rate limit

@@ -6,11 +6,13 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from backend.app.schemas.auth_schema import TokenData
 
-# Configuration (In a real app, these should be in environment variables)
-SECRET_KEY = "teaching-secret-key-keep-it-secret"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-LOGIN_RATE_LIMIT = "5/minute"
+from backend.config.auth import (
+    SECRET_KEY,
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+)
+
+# Configuration derived from config/auth.py
 
 # Hardcoded users for teaching purposes
 USERS_DB = {

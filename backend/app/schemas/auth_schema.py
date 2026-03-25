@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from backend.app.schemas.user_schema import UserRole
 
 class LoginRequest(BaseModel):
     username: str
@@ -11,4 +12,4 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
-    role: Optional[str] = None
+    role: Optional[UserRole] = None

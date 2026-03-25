@@ -4,8 +4,9 @@ from typing import Optional, Annotated
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from backend.app.schemas.auth_schema import TokenData
 
+from backend.app.schemas.auth_schema import TokenData
+from backend.app.schemas.user_schema import UserRole
 from backend.config.auth import (
     SECRET_KEY,
     ALGORITHM,
@@ -44,12 +45,12 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> TokenData
         role: str = payload.get("role")
         if username is None or role is None:
             raise credentials_exception
-        token_data = TokenData(username=username, role=role)
-    except JWTError:
+        token_data = TokenData(username=username, role=UserRole(role)) 
+    except (JWTError, ValueError): 
         raise credentials_exception
     return token_data
 
-def RoleChecker(allowed_roles: list[str]):
+def RoleChecker(allowed_roles: list[UserRole]): 
     def role_checker(current_user: Annotated[TokenData, Depends(get_current_user)]):
         if current_user.role not in allowed_roles:
             raise HTTPException(

@@ -5,13 +5,13 @@ from pymongo.synchronous.database import Database
 from backend.config.database import get_db
 
 from backend.app.auth_utils import RoleChecker
-
+from backend.app.schemas.user_schema import UserRole
 
 router = APIRouter()
 
 # Role checkers
-admin_or_user = Depends(RoleChecker(["admin", "user"]))
-admin_only = Depends(RoleChecker(["admin"]))
+admin_or_user = Depends(RoleChecker([UserRole.ADMIN, UserRole.USER]))
+admin_only = Depends(RoleChecker([UserRole.ADMIN]))
 
 
 @router.get("/", response_model=list[EmployeeResponse], dependencies=[admin_or_user])

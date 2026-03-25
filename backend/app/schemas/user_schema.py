@@ -1,17 +1,21 @@
+from enum import StrEnum
 from typing import Optional
 from pydantic import EmailStr, BaseModel
+
+class UserRole(StrEnum):
+    ADMIN = "admin"
+    USER = "user"
 
 class UserBase(BaseModel):
     username: str
     email: Optional[EmailStr] = None
-    role: str = "user"
 
 class UserCreate(UserBase):
     password: str
 
-class UserInDB(UserBase):
-    hashed_password: str
-
 class UserResponse(UserBase):
-    pass
+    role: UserRole
+
+class UserInDB(UserResponse):
+    hashed_password: str
 

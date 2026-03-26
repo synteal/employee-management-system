@@ -3,8 +3,23 @@
 ## About this project
 
 We use FastAPI and MongoDb to serve an API for employee management.
+React 19 + React Compiler as a separate frontend.
 
 ### How to run this project
 
+Both frontend and backend have their own .env to fill out, look at .env.example for values required.
 Set up your MongoDb instance and update the connection string in the `.env` file. Look at `.env.example` for reference.
-In the root directory, run `uv run fastapi dev` and ensure MongoDb is running.
+
+#### Local Development
+To run the backend:
+```sh
+cd backend
+uv run fastapi dev
+```
+
+To run the vite frontend:
+```sh
+cd frontend
+npm run dev # Alternatively bun or pnpm
+```
+

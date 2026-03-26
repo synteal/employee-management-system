@@ -151,4 +151,19 @@ describe("EmployeeTable Component", () => {
     expect(screen.queryByTitle(/Edit Employee/i)).not.toBeInTheDocument();
     expect(screen.queryByTitle(/Delete Employee/i)).not.toBeInTheDocument();
   });
+
+  it("should have high-contrast styling for search input and filter select", async () => {
+    mockApi.get.mockResolvedValue({ data: mockEmployees });
+    render(<EmployeeTable />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/Search by name.../i)).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Search by name.../i);
+    const filterSelect = screen.getByRole("combobox");
+
+    expect(searchInput).toHaveClass("bg-white", "text-gray-900");
+    expect(filterSelect).toHaveClass("bg-white", "text-gray-900");
+  });
 });

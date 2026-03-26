@@ -149,7 +149,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       value={formData.employeeId}
                       onChange={handleChange}
                       disabled={!!initialData}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-gray-50 disabled:cursor-not-allowed"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-gray-100 text-gray-900 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -168,7 +168,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       id="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-white text-gray-900"
                     />
                   </div>
                 </div>
@@ -187,7 +187,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       id="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-white text-gray-900"
                     />
                   </div>
                 </div>
@@ -205,7 +205,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       name="department"
                       value={formData.department}
                       onChange={handleChange}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-white text-gray-900"
                     >
                       <option value="Engineering">Engineering</option>
                       <option value="HR">HR</option>
@@ -230,7 +230,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       id="role"
                       value={formData.role}
                       onChange={handleChange}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-white text-gray-900"
                     />
                   </div>
                 </div>
@@ -249,7 +249,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       id="yearlySalary"
                       value={formData.yearlySalary}
                       onChange={handleChange}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-white text-gray-900"
                     />
                   </div>
                 </div>
@@ -267,7 +267,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       name="status"
                       value={formData.status}
                       onChange={handleChange}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2 bg-white text-gray-900"
                     >
                       <option value="active">Active</option>
                       <option value="disabled">Disabled</option>

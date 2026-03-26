@@ -156,4 +156,24 @@ describe("EmployeeForm Component", () => {
       expect(screen.getByText("Failed to save")).toBeInTheDocument();
     });
   });
+
+  it("should have high-contrast styling for select and input elements", () => {
+    render(
+      <EmployeeForm
+        isOpen={true}
+        onClose={mockOnClose}
+        onSubmit={mockOnSubmit}
+      />
+    );
+
+    const departmentSelect = screen.getByLabelText(/Department \*/i);
+    const statusSelect = screen.getByLabelText(/Status/i);
+    const nameInput = screen.getByLabelText(/Full Name \*/i);
+    const idInput = screen.getByLabelText(/Employee ID \*/i);
+
+    expect(departmentSelect).toHaveClass("bg-white", "text-gray-900");
+    expect(statusSelect).toHaveClass("bg-white", "text-gray-900");
+    expect(nameInput).toHaveClass("bg-white", "text-gray-900");
+    expect(idInput).toHaveClass("bg-gray-100", "text-gray-900");
+  });
 });

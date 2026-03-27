@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import api from "../api/axios";
 
@@ -18,7 +19,7 @@ vi.mock("recharts", () => ({
   PieChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="pie-chart">{children}</div>
   ),
-  Pie: () => <div data-testid="pie-slice" />,
+  Pie: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-slice">{children}</div>,
   Cell: () => null,
   Tooltip: () => null,
   Legend: () => <div data-testid="legend" />,
@@ -42,22 +43,26 @@ describe("Dashboard Page", () => {
     },
   };
 
-  it("should display a loading spinner initially", async () => {
-    // Delay the API response to ensure loading state is visible
-    mockApi.get.mockReturnValue(new Promise(() => {}));
+  const renderComponent = () => {
+    return render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+  };
 
-    render(<Dashboard />);
-    
-    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+  it("should display analytics loading initially", async () => {
+    mockApi.get.mockReturnValue(new Promise(() => {}));
+    renderComponent();
+    expect(screen.getByText(/Loading analytics.../i)).toBeInTheDocument();
   });
 
   it("should render statistics correctly after data is loaded", async () => {
     mockApi.get.mockResolvedValue({ data: mockData });
-
-    render(<Dashboard />);
+    renderComponent();
 
     await waitFor(() => {
-      expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Loading analytics.../i)).not.toBeInTheDocument();
     });
 
     expect(screen.getByText("Total Employees")).toBeInTheDocument();
@@ -70,8 +75,7 @@ describe("Dashboard Page", () => {
 
   it("should render the chart when data is available", async () => {
     mockApi.get.mockResolvedValue({ data: mockData });
-
-    render(<Dashboard />);
+    renderComponent();
 
     await waitFor(() => {
       expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
@@ -88,11 +92,10 @@ describe("Dashboard Page", () => {
       department_distribution: {},
     };
     mockApi.get.mockResolvedValue({ data: emptyData });
-
-    render(<Dashboard />);
+    renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText("No data available to display chart.")).toBeInTheDocument();
+      expect(screen.getByText(/No distribution data available/i)).toBeInTheDocument();
     });
     
     expect(screen.queryByTestId("pie-chart")).not.toBeInTheDocument();
@@ -101,18 +104,17 @@ describe("Dashboard Page", () => {
   it("should handle API failure gracefully", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     mockApi.get.mockRejectedValue(new Error("API Error"));
-
-    render(<Dashboard />);
+    renderComponent();
 
     await waitFor(() => {
-      expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Loading analytics.../i)).not.toBeInTheDocument();
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Failed to fetch data for dashboard",
       expect.any(Error)
     );
-    expect(screen.getByText("No data available to display chart.")).toBeInTheDocument();
+    expect(screen.getByText(/No distribution data available/i)).toBeInTheDocument();
     
     consoleSpy.mockRestore();
   });

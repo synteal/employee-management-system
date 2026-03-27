@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Users,
   LayoutDashboard,
-  UserCircle,
   LogOut,
   Menu,
   X,
@@ -17,18 +16,13 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Home", path: "/", icon: <Users className="w-5 h-5 mr-2" /> },
+    { name: "Employees", path: "/", icon: <Users className="w-5 h-5 mr-2" /> },
     ...(user?.role === "admin"
       ? [
           {
             name: "Dashboard",
             path: "/dashboard",
             icon: <LayoutDashboard className="w-5 h-5 mr-2" />,
-          },
-          {
-            name: "Mgmt",
-            path: "/management",
-            icon: <UserCircle className="w-5 h-5 mr-2" />,
           },
         ]
       : []),

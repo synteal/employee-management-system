@@ -9,9 +9,8 @@ import Navbar from "./components/Navbar";
 // Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Home from "./pages/Home";
+import Employees from "./pages/Employees";
 import Dashboard from "./pages/Dashboard";
-import EmployeeManagement from "./pages/EmployeeManagement";
 import Logout from "./pages/Logout";
 
 function App() {
@@ -35,12 +34,11 @@ function App() {
                 </>
               }
             >
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Employees />} />
 
               {/* Admin Routes */}
               <Route element={<ProtectedRoute requiredRole="admin" />}>
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/management" element={<EmployeeManagement />} />
               </Route>
             </Route>
           </Routes>

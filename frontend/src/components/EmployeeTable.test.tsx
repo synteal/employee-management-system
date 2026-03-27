@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import EmployeeTable from "./EmployeeTable";
 import api from "../api/axios";
 
@@ -39,15 +40,23 @@ describe("EmployeeTable Component", () => {
     vi.clearAllMocks();
   });
 
+  const renderComponent = (props = {}) => {
+    return render(
+      <MemoryRouter>
+        <EmployeeTable {...props} />
+      </MemoryRouter>
+    );
+  };
+
   it("should show a loading spinner initially", async () => {
     mockApi.get.mockReturnValue(new Promise(() => {})); // Never resolves
-    render(<EmployeeTable />);
+    renderComponent();
     expect(screen.getByText(/Loading employees.../i)).toBeInTheDocument();
   });
 
   it("should render employee data correctly after fetching", async () => {
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable />);
+    renderComponent();
 
     await waitFor(() => {
       expect(screen.queryByText(/Loading employees.../i)).not.toBeInTheDocument();
@@ -61,16 +70,16 @@ describe("EmployeeTable Component", () => {
 
   it("should show empty state message when no employees are returned", async () => {
     mockApi.get.mockResolvedValue({ data: [] });
-    render(<EmployeeTable />);
+    renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText(/No employees found matching your criteria/i)).toBeInTheDocument();
+      expect(screen.getByText(/No results found/i)).toBeInTheDocument();
     });
   });
 
   it("should show error message when API call fails", async () => {
     mockApi.get.mockRejectedValue(new Error("API Error"));
-    render(<EmployeeTable />);
+    renderComponent();
 
     await waitFor(() => {
       expect(screen.getByText(/Failed to fetch employees/i)).toBeInTheDocument();
@@ -79,7 +88,7 @@ describe("EmployeeTable Component", () => {
 
   it("should trigger a search when typing in the search box", async () => {
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable />);
+    renderComponent();
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/Search by name.../i)).toBeInTheDocument();
@@ -96,7 +105,7 @@ describe("EmployeeTable Component", () => {
 
   it("should trigger a filter when changing department", async () => {
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable />);
+    renderComponent();
 
     await waitFor(() => {
       expect(screen.getByRole("combobox")).toBeInTheDocument();
@@ -113,7 +122,7 @@ describe("EmployeeTable Component", () => {
   it("should call onEdit callback when clicking edit button", async () => {
     const onEditMock = vi.fn();
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable isAdminView={true} onEdit={onEditMock} />);
+    renderComponent({ isAdminView: true, onEdit: onEditMock });
 
     await waitFor(() => {
       expect(screen.getByText("Alice Smith")).toBeInTheDocument();
@@ -128,7 +137,7 @@ describe("EmployeeTable Component", () => {
   it("should call onDelete callback when clicking delete button", async () => {
     const onDeleteMock = vi.fn();
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable isAdminView={true} onDelete={onDeleteMock} />);
+    renderComponent({ isAdminView: true, onDelete: onDeleteMock });
 
     await waitFor(() => {
       expect(screen.getByText("Alice Smith")).toBeInTheDocument();
@@ -142,7 +151,7 @@ describe("EmployeeTable Component", () => {
 
   it("should not show action buttons when isAdminView is false", async () => {
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable isAdminView={false} />);
+    renderComponent({ isAdminView: false });
 
     await waitFor(() => {
       expect(screen.getByText("Alice Smith")).toBeInTheDocument();
@@ -154,7 +163,7 @@ describe("EmployeeTable Component", () => {
 
   it("should have high-contrast styling for search input and filter select", async () => {
     mockApi.get.mockResolvedValue({ data: mockEmployees });
-    render(<EmployeeTable />);
+    renderComponent();
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/Search by name.../i)).toBeInTheDocument();

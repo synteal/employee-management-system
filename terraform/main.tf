@@ -143,43 +143,49 @@ resource "aws_instance" "app" {
 
   # Automate backend deployment and systemd management
   user_data = <<-EOF
-    #!/bin/bash
-    set -e
+#!/bin/bash
+set -e
 
-    # Log user_data output
-    exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+# Log user_data output
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
-    echo "=== Starting deployment sequence ==="
+echo "=== Starting deployment sequence ==="
 
-    apt-get update -y
-    apt-get upgrade -y
+apt-get update -y
+apt-get upgrade -y
 
-    # --- Dependencies ---
-    apt-get install -y python3 python3-pip python3-venv git curl gnupg nginx
+# --- Dependencies ---
+# Ubuntu 22.04 comes with Python 3.10
+apt-get install -y python3 python3-pip python3-venv git curl gnupg nginx
 
-    # --- Install MongoDB 7.0 ---
-    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
-       gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
-       tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-    apt-get update -y
-    apt-get install -y mongodb-org
-    systemctl enable mongod
-    systemctl start mongod
+# --- Install MongoDB 7.0 ---
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+   gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
+   tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+apt-get update -y
+apt-get install -y mongodb-org
+systemctl enable mongod
+systemctl start mongod
 
-    # --- Install uv (Preferred Python package manager) ---
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="/root/.cargo/bin:$PATH"
-    # Make uv available to all users
-    cp /root/.cargo/bin/uv /usr/local/bin/
-    cp /root/.cargo/bin/uvx /usr/local/bin/
+# --- Install uv (Preferred Python package manager) ---
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
+[ -f /root/.local/bin/env ] && . /root/.local/bin/env
 
-    # --- Codebase Setup ---
-    cd /home/ubuntu
-    sudo -u ubuntu git clone ${var.backend_github_repo} repo
+# Make uv available to all users regardless of installer target.
+UV_BIN="$(command -v uv)"
+UVX_BIN="$(command -v uvx)"
+install -m 0755 "$UV_BIN" /usr/local/bin/uv
+install -m 0755 "$UVX_BIN" /usr/local/bin/uvx
 
-    # --- Environment Configuration ---
-    cat <<EOT > /home/ubuntu/repo/backend/.env
+# --- Codebase Setup ---
+cd /home/ubuntu
+# Use -E for sudo to pass environment variables if needed
+sudo -u ubuntu git clone ${var.backend_github_repo} repo
+
+# --- Environment Configuration ---
+cat <<EOT > /home/ubuntu/repo/backend/.env
 MONGO_URI=mongodb://localhost:27017
 MONGO_DB_NAME=${var.mongo_db_name}
 SECRET_KEY=${var.secret_key}
@@ -187,15 +193,15 @@ ALGORITHM=${var.algorithm}
 ACCESS_TOKEN_EXPIRE_MINUTES=${var.access_token_expire_minutes}
 CORS_ALLOW_ORIGINS=${var.cors_allow_origins}
 EOT
-    chown ubuntu:ubuntu /home/ubuntu/repo/backend/.env
+chown ubuntu:ubuntu /home/ubuntu/repo/backend/.env
 
-    # --- Backend Initialization ---
-    cd /home/ubuntu/repo/backend
-    sudo -u ubuntu /usr/local/bin/uv python install 3.12
-    sudo -u ubuntu /usr/local/bin/uv sync
+# --- Backend Initialization ---
+cd /home/ubuntu/repo/backend
+# Rely on system python (3.10) since 3.12 is not strictly required
+sudo -u ubuntu /usr/local/bin/uv sync
 
-    # --- Deploy Script (Convenience for scripts/deploy.sh) ---
-    cat <<EOT > /usr/local/bin/deploy-backend
+# --- Deploy Script (Convenience for scripts/deploy.sh) ---
+cat <<EOT > /usr/local/bin/deploy-backend
 #!/bin/bash
 set -e
 echo "Updating backend from repo..."
@@ -206,10 +212,14 @@ sudo -u ubuntu /usr/local/bin/uv sync
 systemctl restart fastapi
 echo "Backend deployment complete!"
 EOT
-    chmod +x /usr/local/bin/deploy-backend
+chmod +x /usr/local/bin/deploy-backend
+cat <<EOT > /etc/sudoers.d/deploy-backend
+ubuntu ALL=(root) NOPASSWD: /usr/local/bin/deploy-backend
+EOT
+chmod 440 /etc/sudoers.d/deploy-backend
 
-    # --- Systemd Service ---
-    cat <<EOT > /etc/systemd/system/fastapi.service
+# --- Systemd Service ---
+cat <<EOT > /etc/systemd/system/fastapi.service
 [Unit]
 Description=FastAPI Systemd Service
 After=network.target mongod.service
@@ -219,19 +229,19 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/repo/backend
 Environment=PYTHONPATH=/home/ubuntu/repo
-ExecStart=/usr/local/bin/uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+ExecStart=/usr/local/bin/uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOT
 
-    systemctl daemon-reload
-    systemctl enable fastapi
-    systemctl start fastapi
+systemctl daemon-reload
+systemctl enable fastapi
+systemctl start fastapi
 
-    # --- Nginx Setup (Optional: Reverse Proxy to FastAPI) ---
-    cat <<EOT > /etc/nginx/sites-available/default
+# --- Nginx Setup (Optional: Reverse Proxy to FastAPI) ---
+cat <<EOT > /etc/nginx/sites-available/default
 server {
     listen 80;
     server_name _;
@@ -246,9 +256,9 @@ server {
     }
 }
 EOT
-    systemctl restart nginx
+systemctl restart nginx
 
-    echo "=== Deployment sequence complete ==="
+echo "=== Deployment sequence complete ==="
   EOF
 
   tags = {

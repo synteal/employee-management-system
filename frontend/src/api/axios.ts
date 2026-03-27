@@ -1,8 +1,59 @@
 import axios, { AxiosError } from "axios";
 
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+const isLoopbackApiUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const resolveBaseUrl = (): string => {
+  if (!configuredApiUrl) {
+    return "/";
+  }
+
+  if (!import.meta.env.PROD) {
+    return configuredApiUrl;
+  }
+
+  if (isLoopbackApiUrl(configuredApiUrl)) {
+    return "/";
+  }
+
+  if (typeof window === "undefined") {
+    return configuredApiUrl;
+  }
+
+  try {
+    const configuredUrl = new URL(configuredApiUrl, window.location.origin);
+
+    if (configuredUrl.hostname === window.location.hostname) {
+      return "/";
+    }
+
+    if (
+      window.location.protocol === "https:" &&
+      configuredUrl.protocol === "http:"
+    ) {
+      configuredUrl.protocol = "https:";
+      return configuredUrl.toString();
+    }
+
+    return configuredUrl.toString();
+  } catch {
+    return configuredApiUrl;
+  }
+};
+
+const baseURL = resolveBaseUrl();
+
 const api = axios.create({
-  // Default to same-origin so the frontend can talk to the backend through CloudFront.
-  baseURL: import.meta.env.VITE_API_URL || "/",
+  // Production should never talk to a loopback API URL from a deployed browser bundle.
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },

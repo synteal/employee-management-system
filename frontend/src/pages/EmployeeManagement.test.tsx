@@ -11,7 +11,7 @@ vi.mock("../api/axios", () => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
-  getApiErrorMessage: vi.fn((err, fallback) => fallback),
+  getApiErrorMessage: vi.fn((_err, fallback) => fallback),
 }));
 
 const mockEmployees = [

@@ -1,7 +1,8 @@
 import axios, { AxiosError } from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // Assuming FASTAPI runs on 8000 by default, can be modified via env later
+  // Default to same-origin so the frontend can talk to the backend through CloudFront.
+  baseURL: import.meta.env.VITE_API_URL || "/",
   headers: {
     "Content-Type": "application/json",
   },

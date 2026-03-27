@@ -68,15 +68,6 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = [var.allowed_api_cidr] # In production, restrict to CloudFront IPs or use a Load Balancer
   }
 
-  # MongoDB — direct access for debugging (Optional/Risky)
-  ingress {
-    description = "MongoDB"
-    from_port   = 27017
-    to_port     = 27017
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Restricted to 0.0.0.0/0 for now as per sample; recommend SSH tunnel
-  }
-
   tags = local.common_tags
 }
 
@@ -136,11 +127,16 @@ resource "aws_instance" "app" {
     # Python and Git
     apt-get install -y python3 python3-pip python3-venv git
 
+    # Install uv — faster package management as per style guide
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="/root/.cargo/bin:$PATH"
+
     # Setup deploy script
     cat <<'INNER_EOF' > /usr/local/bin/deploy-backend
     #!/bin/bash
     PROJECT_DIR="${var.app_install_path}"
     REPO_URL="${var.repo_url}"
+    UV_BIN="/root/.cargo/bin/uv"
 
     if [ ! -d "$PROJECT_DIR" ]; then
       git clone $REPO_URL $PROJECT_DIR
@@ -148,9 +144,10 @@ resource "aws_instance" "app" {
       cd $PROJECT_DIR && git pull
     fi
 
+    # Create and sync environment using uv
     cd $PROJECT_DIR/backend
-    python3 -m venv venv
-    ./venv/bin/pip install -r requirements.txt
+    $UV_BIN venv
+    $UV_BIN pip install -r requirements.txt
     
     # Simple systemd service setup for FastAPI
     cat <<'SERVICE_EOF' > /etc/systemd/system/fastapi.service
@@ -161,7 +158,7 @@ resource "aws_instance" "app" {
     [Service]
     User=ubuntu
     WorkingDirectory=$PROJECT_DIR/backend
-    ExecStart=$PROJECT_DIR/backend/venv/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ExecStart=$PROJECT_DIR/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
     Restart=always
 
     [Install]
@@ -177,10 +174,20 @@ resource "aws_instance" "app" {
     
     # Allow ubuntu user to run the deploy script
     echo "ubuntu ALL=(ALL) NOPASSWD: /usr/local/bin/deploy-backend" >> /etc/sudoers
+
+    # Initial deployment
+    /usr/local/bin/deploy-backend
   EOF
 
   tags = {
     Name    = "${var.project_name}-server"
     Project = var.project_name
   }
+}
+
+resource "aws_eip" "app_ip" {
+  instance = aws_instance.app.id
+  domain   = "vpc"
+
+  tags = local.common_tags
 }

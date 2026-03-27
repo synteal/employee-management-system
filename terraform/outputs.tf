@@ -12,3 +12,8 @@ output "s3_bucket_name" {
   description = "Name of the S3 bucket for frontend"
   value       = aws_s3_bucket.frontend.id
 }
+
+output "app_public_ip" {
+  description = "Public IP (EIP) of the application server"
+  value       = aws_eip.app_ip.public_ip
+}

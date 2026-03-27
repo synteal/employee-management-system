@@ -13,11 +13,45 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_id                = "S3-${aws_s3_bucket.frontend.bucket}"
   }
 
+  origin {
+    domain_name = aws_eip.app_ip.public_dns
+    origin_id   = "EC2-Backend"
+
+    custom_origin_config {
+      http_port              = 8000
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   enabled             = true
-  is_ipv6_enabled    = true
+  is_ipv6_enabled     = true
   default_root_object = "index.html"
 
-  # Single Page Application Support
+  # API Cache Behavior
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "EC2-Backend"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["*"] # Forward all headers (Authorization, etc.)
+
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+  }
+
+  # Static Frontend Support
   custom_error_response {
     error_caching_min_ttl = 300
     error_code            = 403

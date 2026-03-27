@@ -12,6 +12,10 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.0"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -171,9 +175,8 @@ resource "aws_instance" "app" {
     cp /root/.cargo/bin/uvx /usr/local/bin/
 
     # --- Codebase Setup ---
-    mkdir -p /home/ubuntu/repo
-    git clone ${var.backend_github_repo} /home/ubuntu/repo
-    chown -R ubuntu:ubuntu /home/ubuntu/repo
+    cd /home/ubuntu
+    sudo -u ubuntu git clone ${var.backend_github_repo} repo
 
     # --- Environment Configuration ---
     cat <<EOT > /home/ubuntu/repo/backend/.env
@@ -188,8 +191,22 @@ EOT
 
     # --- Backend Initialization ---
     cd /home/ubuntu/repo/backend
-    sudo -u ubuntu uv python install 3.12
-    sudo -u ubuntu uv sync
+    sudo -u ubuntu /usr/local/bin/uv python install 3.12
+    sudo -u ubuntu /usr/local/bin/uv sync
+
+    # --- Deploy Script (Convenience for scripts/deploy.sh) ---
+    cat <<EOT > /usr/local/bin/deploy-backend
+#!/bin/bash
+set -e
+echo "Updating backend from repo..."
+cd /home/ubuntu/repo
+sudo -u ubuntu git pull
+cd backend
+sudo -u ubuntu /usr/local/bin/uv sync
+systemctl restart fastapi
+echo "Backend deployment complete!"
+EOT
+    chmod +x /usr/local/bin/deploy-backend
 
     # --- Systemd Service ---
     cat <<EOT > /etc/systemd/system/fastapi.service
@@ -200,9 +217,9 @@ After=network.target mongod.service
 [Service]
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/repo
-# Use uv run to execute the app with its environment
-ExecStart=/usr/local/bin/uv run --project backend uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/home/ubuntu/repo/backend
+Environment=PYTHONPATH=/home/ubuntu/repo
+ExecStart=/usr/local/bin/uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 
 [Install]

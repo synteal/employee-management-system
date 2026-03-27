@@ -7,9 +7,9 @@ TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 
 # Get Terraform Outputs
 cd $TERRAFORM_DIR
-S3_BUCKET=$(terraform output -raw s3_bucket_name)
-CLOUDFRONT_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || terraform state show aws_cloudfront_distribution.s3_distribution | grep "^    id" | awk -F'"' '{print $2}')
-EC2_IP=$(terraform output -raw ec2_public_ip)
+S3_BUCKET=$(terraform output -raw frontend_s3_bucket)
+CLOUDFRONT_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null)
+EC2_IP=$(terraform output -raw instance_public_ip)
 
 if [ -z "$S3_BUCKET" ] || [ -z "$EC2_IP" ]; then
   echo "Error: Could not retrieve Terraform outputs. Have you run 'terraform apply'?"
@@ -30,7 +30,7 @@ fi
 
 echo "--- Deploying Backend ---"
 # Trigger the deploy-backend script on EC2
-ssh -i "$TERRAFORM_DIR/ssh-keys/*.pem" ubuntu@$EC2_IP "sudo /usr/local/bin/deploy-backend"
+ssh -i "$TERRAFORM_DIR/ssh-keys/$(basename "$(terraform output -raw private_key_path)")" ubuntu@$EC2_IP "sudo /usr/local/bin/deploy-backend"
 
 echo "Deployment Complete!"
 echo "Frontend URL: https://$(terraform output -raw cloudfront_url)"

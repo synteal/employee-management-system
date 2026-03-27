@@ -22,3 +22,22 @@ output "private_key_path" {
   description = "Path to the saved private key"
   value       = "ssh-keys/${var.project_name}-key.pem"
 }
+
+# ─────────────────────────────────────────────
+# Frontend Outputs
+# ─────────────────────────────────────────────
+
+output "frontend_s3_bucket" {
+  description = "S3 bucket name for the frontend"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
+output "cloudfront_url" {
+  description = "CloudFront URL for the frontend"
+  value       = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}"
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID"
+  value       = aws_cloudfront_distribution.s3_distribution.id
+}

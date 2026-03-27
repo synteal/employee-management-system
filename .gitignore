@@ -165,6 +165,7 @@ ssh-keys/
 terraform.tfvars
 *.tfstate
 *.tfstate.backup
+tfplan
 .terraform/
 .terraform.lock.hcl
 

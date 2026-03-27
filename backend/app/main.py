@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import os
 
 from backend.config.logger import logger
@@ -51,6 +52,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# === Proxy Headers ===
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(employee_router, prefix="/employees")

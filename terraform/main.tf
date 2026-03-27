@@ -56,49 +56,28 @@ resource "aws_security_group" "ec2" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
 
-  # HTTP — nginx serves the React app
-  ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # HTTPS — for future SSL setup
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # FastAPI — direct access for testing/debugging
+  # FastAPI — direct access for the frontend (via CloudFront/Direct)
   ingress {
     description = "FastAPI"
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_api_cidr] # In production, restrict to CloudFront IPs or use a Load Balancer
   }
 
-  # MongoDB — direct access for Lambda and testing
+  # MongoDB — direct access for debugging (Optional/Risky)
   ingress {
     description = "MongoDB"
     from_port   = 27017
     to_port     = 27017
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # Restricted to 0.0.0.0/0 for now as per sample; recommend SSH tunnel
   }
 
-  tags = {
-    Name    = "${var.project_name}-sg"
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Egress as a separate resource — avoids ec2:RevokeSecurityGroupEgress on the default rule
@@ -143,21 +122,61 @@ resource "aws_instance" "app" {
     apt-get update -y
     apt-get upgrade -y
 
-    # Python
-    apt-get install -y python3 python3-pip python3-venv
+    # Install MongoDB ${var.mongodb_version}
+    apt-get install -y gnupg curl
+    curl -fsSL https://www.mongodb.org/static/pgp/server-${var.mongodb_version}.asc | \
+       gpg -o /usr/share/keyrings/mongodb-server-${var.mongodb_version}.gpg \
+       --dearmor
+    echo "deb [ [arch=amd64,arm64] signed-by=/usr/share/keyrings/mongodb-server-${var.mongodb_version}.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/${var.mongodb_version} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${var.mongodb_version}.list
+    apt-get update
+    apt-get install -y mongodb-org
+    systemctl start mongod
+    systemctl enable mongod
 
-    # Node.js 18
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-    apt-get install -y nodejs
+    # Python and Git
+    apt-get install -y python3 python3-pip python3-venv git
 
-    # nginx and git
-    apt-get install -y nginx git
+    # Setup deploy script
+    cat <<'INNER_EOF' > /usr/local/bin/deploy-backend
+    #!/bin/bash
+    PROJECT_DIR="${var.app_install_path}"
+    REPO_URL="${var.repo_url}"
 
-    # Allow ubuntu user to manage services without password
-    echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl restart fastapi, /bin/systemctl reload nginx, /bin/cp -r * /var/www/html/" >> /etc/sudoers
+    if [ ! -d "$PROJECT_DIR" ]; then
+      git clone $REPO_URL $PROJECT_DIR
+    else
+      cd $PROJECT_DIR && git pull
+    fi
 
-    systemctl enable nginx
-    systemctl start nginx
+    cd $PROJECT_DIR/backend
+    python3 -m venv venv
+    ./venv/bin/pip install -r requirements.txt
+    
+    # Simple systemd service setup for FastAPI
+    cat <<'SERVICE_EOF' > /etc/systemd/system/fastapi.service
+    [Unit]
+    Description=FastAPI System
+    After=network.target
+
+    [Service]
+    User=ubuntu
+    WorkingDirectory=$PROJECT_DIR/backend
+    ExecStart=$PROJECT_DIR/backend/venv/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+    SERVICE_EOF
+
+    systemctl daemon-reload
+    systemctl enable fastapi
+    systemctl restart fastapi
+    INNER_EOF
+
+    chmod +x /usr/local/bin/deploy-backend
+    
+    # Allow ubuntu user to run the deploy script
+    echo "ubuntu ALL=(ALL) NOPASSWD: /usr/local/bin/deploy-backend" >> /etc/sudoers
   EOF
 
   tags = {

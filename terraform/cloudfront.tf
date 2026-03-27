@@ -30,15 +30,15 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_access_control_id = aws_cloudfront_origin_access_control.default.id
   }
 
-  # EC2 Backend Origin (Nginx serving FastAPI)
+  # EC2 Backend Origin (FastAPI served directly by Uvicorn)
   origin {
     domain_name = aws_instance.app.public_dns
-    origin_id   = "EC2-Backend"
+    origin_id   = "FastAPI-Backend"
 
     custom_origin_config {
-      http_port              = 80
+      http_port              = 8000
       https_port             = 443
-      origin_protocol_policy = "http-only" # Nginx is on port 80
+      origin_protocol_policy = "http-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
@@ -52,7 +52,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     path_pattern     = "/auth*"
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "EC2-Backend"
+    target_origin_id = "FastAPI-Backend"
 
     forwarded_values {
       query_string = true
@@ -74,7 +74,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     path_pattern     = "/employees*"
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "EC2-Backend"
+    target_origin_id = "FastAPI-Backend"
 
     forwarded_values {
       query_string = true
@@ -96,7 +96,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     path_pattern     = "/health"
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "EC2-Backend"
+    target_origin_id = "FastAPI-Backend"
 
     forwarded_values {
       query_string = true

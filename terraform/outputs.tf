@@ -14,8 +14,8 @@ output "ssh_command" {
 }
 
 output "app_url" {
-  description = "URL to access the deployed app"
-  value       = "http://${aws_instance.app.public_ip}"
+  description = "Direct backend URL for FastAPI"
+  value       = "http://${aws_instance.app.public_ip}:8000"
 }
 
 output "private_key_path" {

@@ -63,25 +63,7 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTP — nginx serves the React app
-  ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # HTTPS — for future SSL setup
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # FastAPI — direct access for testing/debugging
+  # FastAPI origin for CloudFront and direct debugging
   ingress {
     description = "FastAPI"
     from_port   = 8000
@@ -136,10 +118,10 @@ data "aws_ami" "ubuntu" {
 # ─────────────────────────────────────────────
 
 resource "aws_instance" "app" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  key_name               = aws_key_pair.ec2_key.key_name
-  vpc_security_group_ids = [aws_security_group.ec2.id]
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.instance_type
+  key_name                    = aws_key_pair.ec2_key.key_name
+  vpc_security_group_ids      = [aws_security_group.ec2.id]
   user_data_replace_on_change = true
 
   # Automate backend deployment and systemd management
@@ -157,7 +139,7 @@ apt-get upgrade -y
 
 # --- Dependencies ---
 # Ubuntu 22.04 comes with Python 3.10
-apt-get install -y python3 python3-pip python3-venv git curl gnupg nginx
+apt-get install -y python3 python3-pip python3-venv git curl gnupg
 
 # --- Install MongoDB 7.0 ---
 curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
@@ -240,24 +222,6 @@ EOT
 systemctl daemon-reload
 systemctl enable fastapi
 systemctl start fastapi
-
-# --- Nginx Setup (Optional: Reverse Proxy to FastAPI) ---
-cat <<EOT > /etc/nginx/sites-available/default
-server {
-    listen 80;
-    server_name _;
-
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-    }
-}
-EOT
-systemctl restart nginx
 
 echo "=== Deployment sequence complete ==="
   EOF

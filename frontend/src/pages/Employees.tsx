@@ -8,7 +8,7 @@ import EmployeeForm from "../components/EmployeeForm";
 const Employees: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
@@ -36,7 +36,7 @@ const Employees: React.FC = () => {
           console.error("Cannot delete employee: Missing employeeId", employee);
           return;
         }
-        await api.delete(`/employees/${id}`);
+        await api.delete(`/employees/${id}/`);
         setRefreshKey((prev) => prev + 1);
       } catch (err: any) {
         console.error("Failed to delete employee", err);
@@ -56,9 +56,9 @@ const Employees: React.FC = () => {
           );
           return;
         }
-        await api.put(`/employees/${id}`, employeeData);
+        await api.put(`/employees/${id}/`, employeeData);
       } else {
-        await api.post("/employees", employeeData);
+        await api.post("/employees/", employeeData);
       }
       setRefreshKey((prev) => prev + 1);
       setIsModalOpen(false);
@@ -77,8 +77,8 @@ const Employees: React.FC = () => {
             Employees
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            {isAdmin 
-              ? "Manage company employees, their roles, and status." 
+            {isAdmin
+              ? "Manage company employees, their roles, and status."
               : "View the list of company employees."}
           </p>
         </div>

@@ -60,9 +60,9 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
       setLoading(true);
       setError("");
       try {
-        let url = "/employees";
+        let url = "/employees/";
         const params = new URLSearchParams();
-        
+
         if (deferredSearchTerm) params.append("name", deferredSearchTerm);
         if (departmentFilter) params.append("department", departmentFilter);
         if (statusFilter) params.append("status", statusFilter);
@@ -70,7 +70,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
         if (params.toString()) {
           url = `/employees/search?${params.toString()}`;
         }
-        
+
         const response = await api.get(url);
         setEmployees(response.data);
       } catch (err: unknown) {
@@ -160,7 +160,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
       {error ? (
         <div className="p-12 text-center text-red-500">
           <p className="text-lg font-medium">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-4 text-blue-600 underline"
           >
@@ -260,13 +260,12 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border ${
-                        employee.status === "active"
+                      className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border ${employee.status === "active"
                           ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                           : employee.status === "disabled"
                             ? "bg-rose-50 text-rose-700 border-rose-100"
                             : "bg-amber-50 text-amber-700 border-amber-100"
-                      }`}
+                        }`}
                     >
                       {employee.status.replace("_", " ")}
                     </span>

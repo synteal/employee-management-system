@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Used for naming all resources"
   type        = string
-  default     = "student-employee-app-jl"
+  default     = "student-employee-app"
 }
 
 variable "instance_type" {
@@ -16,39 +16,41 @@ variable "instance_type" {
   default     = "t2.micro"
 }
 
-locals {
-  common_tags = {
-    Project   = var.project_name
-    ManagedBy = "Terraform"
-  }
+# ─────────────────────────────────────────────
+# Backend Configuration
+# ─────────────────────────────────────────────
+
+variable "backend_github_repo" {
+  description = "Public GitHub repository URL for the backend"
+  type        = string
 }
 
-variable "repo_url" {
-  description = "The URL of the Git repository for the backend code."
+variable "mongo_db_name" {
+  description = "MongoDB database name"
   type        = string
-  default     = "https://github.com/your-repo/your-project.git"
+  default     = "employee_db"
 }
 
-variable "allowed_ssh_cidr" {
-  description = "CIDR block allowed to SSH into the EC2 instance"
+variable "secret_key" {
+  description = "Secret key for JWT"
   type        = string
-  default     = "0.0.0.0/0"
+  sensitive   = true
 }
 
-variable "allowed_api_cidr" {
-  description = "CIDR block allowed to access the FastAPI backend"
+variable "algorithm" {
+  description = "JWT algorithm"
   type        = string
-  default     = "0.0.0.0/0"
+  default     = "HS256"
 }
 
-variable "mongodb_version" {
-  description = "The version of MongoDB to install (e.g., 7.0, 6.0)"
-  type        = string
-  default     = "7.0"
+variable "access_token_expire_minutes" {
+  description = "JWT token expiration in minutes"
+  type        = number
+  default     = 30
 }
 
-variable "app_install_path" {
-  description = "The directory on the EC2 instance where the app will be cloned"
+variable "cors_allow_origins" {
+  description = "CORS allowed origins (comma-separated)"
   type        = string
-  default     = "/home/ubuntu/app"
+  default     = "*"
 }

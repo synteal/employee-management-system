@@ -56,19 +56,49 @@ resource "aws_security_group" "ec2" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # FastAPI — direct access for the frontend (via CloudFront/Direct)
+  # HTTP — nginx serves the React app
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS — for future SSL setup
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # FastAPI — direct access for testing/debugging
   ingress {
     description = "FastAPI"
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_api_cidr] # In production, restrict to CloudFront IPs or use a Load Balancer
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = local.common_tags
+  # MongoDB — direct access for Lambda and testing
+  ingress {
+    description = "MongoDB"
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name    = "${var.project_name}-sg"
+    Project = var.project_name
+  }
 }
 
 # Egress as a separate resource — avoids ec2:RevokeSecurityGroupEgress on the default rule
@@ -107,87 +137,105 @@ resource "aws_instance" "app" {
   key_name               = aws_key_pair.ec2_key.key_name
   vpc_security_group_ids = [aws_security_group.ec2.id]
 
-  # Install base dependencies on first boot
+  # Automate backend deployment and systemd management
   user_data = <<-EOF
     #!/bin/bash
+    set -e
+
+    # Log user_data output
+    exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+    echo "=== Starting deployment sequence ==="
+
     apt-get update -y
     apt-get upgrade -y
 
-    # Install MongoDB ${var.mongodb_version}
-    apt-get install -y gnupg curl
-    curl -fsSL https://www.mongodb.org/static/pgp/server-${var.mongodb_version}.asc | \
-       gpg -o /usr/share/keyrings/mongodb-server-${var.mongodb_version}.gpg \
-       --dearmor
-    echo "deb [ [arch=amd64,arm64] signed-by=/usr/share/keyrings/mongodb-server-${var.mongodb_version}.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/${var.mongodb_version} multiverse" | tee /etc/apt/sources.list.d/mongodb-org-${var.mongodb_version}.list
-    apt-get update
+    # --- Dependencies ---
+    apt-get install -y python3 python3-pip python3-venv git curl gnupg nginx
+
+    # --- Install MongoDB 7.0 ---
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+       gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
+       tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    apt-get update -y
     apt-get install -y mongodb-org
-    systemctl start mongod
     systemctl enable mongod
+    systemctl start mongod
 
-    # Python and Git
-    apt-get install -y python3 python3-pip python3-venv git
-
-    # Install uv — faster package management as per style guide
+    # --- Install uv (Preferred Python package manager) ---
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="/root/.cargo/bin:$PATH"
+    # Make uv available to all users
+    cp /root/.cargo/bin/uv /usr/local/bin/
+    cp /root/.cargo/bin/uvx /usr/local/bin/
 
-    # Setup deploy script
-    cat <<'INNER_EOF' > /usr/local/bin/deploy-backend
-    #!/bin/bash
-    PROJECT_DIR="${var.app_install_path}"
-    REPO_URL="${var.repo_url}"
-    UV_BIN="/root/.cargo/bin/uv"
+    # --- Codebase Setup ---
+    mkdir -p /home/ubuntu/repo
+    git clone ${var.backend_github_repo} /home/ubuntu/repo
+    chown -R ubuntu:ubuntu /home/ubuntu/repo
 
-    if [ ! -d "$PROJECT_DIR" ]; then
-      git clone $REPO_URL $PROJECT_DIR
-    else
-      cd $PROJECT_DIR && git pull
-    fi
+    # --- Environment Configuration ---
+    cat <<EOT > /home/ubuntu/repo/backend/.env
+MONGO_URI=mongodb://localhost:27017
+MONGO_DB_NAME=${var.mongo_db_name}
+SECRET_KEY=${var.secret_key}
+ALGORITHM=${var.algorithm}
+ACCESS_TOKEN_EXPIRE_MINUTES=${var.access_token_expire_minutes}
+CORS_ALLOW_ORIGINS=${var.cors_allow_origins}
+EOT
+    chown ubuntu:ubuntu /home/ubuntu/repo/backend/.env
 
-    # Create and sync environment using uv
-    cd $PROJECT_DIR/backend
-    $UV_BIN venv
-    $UV_BIN pip install -r requirements.txt
-    
-    # Simple systemd service setup for FastAPI
-    cat <<'SERVICE_EOF' > /etc/systemd/system/fastapi.service
-    [Unit]
-    Description=FastAPI System
-    After=network.target
+    # --- Backend Initialization ---
+    cd /home/ubuntu/repo/backend
+    sudo -u ubuntu uv python install 3.12
+    sudo -u ubuntu uv sync
 
-    [Service]
-    User=ubuntu
-    WorkingDirectory=$PROJECT_DIR/backend
-    ExecStart=$PROJECT_DIR/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
-    Restart=always
+    # --- Systemd Service ---
+    cat <<EOT > /etc/systemd/system/fastapi.service
+[Unit]
+Description=FastAPI Systemd Service
+After=network.target mongod.service
 
-    [Install]
-    WantedBy=multi-user.target
-    SERVICE_EOF
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/repo
+# Use uv run to execute the app with its environment
+ExecStart=/usr/local/bin/uv run --project backend uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOT
 
     systemctl daemon-reload
     systemctl enable fastapi
-    systemctl restart fastapi
-    INNER_EOF
+    systemctl start fastapi
 
-    chmod +x /usr/local/bin/deploy-backend
-    
-    # Allow ubuntu user to run the deploy script
-    echo "ubuntu ALL=(ALL) NOPASSWD: /usr/local/bin/deploy-backend" >> /etc/sudoers
+    # --- Nginx Setup (Optional: Reverse Proxy to FastAPI) ---
+    cat <<EOT > /etc/nginx/sites-available/default
+server {
+    listen 80;
+    server_name _;
 
-    # Initial deployment
-    /usr/local/bin/deploy-backend
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOT
+    systemctl restart nginx
+
+    echo "=== Deployment sequence complete ==="
   EOF
 
   tags = {
     Name    = "${var.project_name}-server"
     Project = var.project_name
   }
-}
-
-resource "aws_eip" "app_ip" {
-  instance = aws_instance.app.id
-  domain   = "vpc"
-
-  tags = local.common_tags
 }

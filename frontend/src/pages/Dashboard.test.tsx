@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import api from "../api/axios";
@@ -52,7 +52,7 @@ describe("Dashboard Page", () => {
   };
 
   it("should display analytics loading initially", async () => {
-    mockApi.get.mockReturnValue(new Promise(() => {}));
+    mockApi.get.mockReturnValue(new Promise(() => { }));
     renderComponent();
     expect(screen.getByText(/Loading analytics.../i)).toBeInTheDocument();
   });
@@ -97,12 +97,12 @@ describe("Dashboard Page", () => {
     await waitFor(() => {
       expect(screen.getByText(/No distribution data available/i)).toBeInTheDocument();
     });
-    
+
     expect(screen.queryByTestId("pie-chart")).not.toBeInTheDocument();
   });
 
   it("should handle API failure gracefully", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
     mockApi.get.mockRejectedValue(new Error("API Error"));
     renderComponent();
 
@@ -115,7 +115,7 @@ describe("Dashboard Page", () => {
       expect.any(Error)
     );
     expect(screen.getByText(/No distribution data available/i)).toBeInTheDocument();
-    
+
     consoleSpy.mockRestore();
   });
 });

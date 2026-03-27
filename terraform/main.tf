@@ -140,6 +140,7 @@ resource "aws_instance" "app" {
   instance_type          = var.instance_type
   key_name               = aws_key_pair.ec2_key.key_name
   vpc_security_group_ids = [aws_security_group.ec2.id]
+  user_data_replace_on_change = true
 
   # Automate backend deployment and systemd management
   user_data = <<-EOF
@@ -229,7 +230,7 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/repo/backend
 Environment=PYTHONPATH=/home/ubuntu/repo
-ExecStart=/usr/local/bin/uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+ExecStart=/usr/local/bin/uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
 Restart=always
 
 [Install]

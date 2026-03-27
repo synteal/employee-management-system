@@ -67,6 +67,31 @@ describe("Navbar Component", () => {
     expect(screen.queryByText("Mgmt")).not.toBeInTheDocument();
   });
 
+  it("should render Dashboard before Employees for admin users", () => {
+    mockUseAuth.mockReturnValue({
+      user: { username: "admin", role: "admin" },
+      isAuthenticated: true,
+      isLoading: false,
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <Navbar />
+      </MemoryRouter>
+    );
+
+    const links = screen.getAllByRole("link");
+    const linkTexts = links.map((link) => link.textContent);
+    
+    // The first mobile link might be in the list if we don't filter.
+    // Desktop links are usually rendered first in the DOM in this component.
+    // Let's find the indices of Dashboard and Employees in the linkTexts array.
+    const dashboardIndex = linkTexts.indexOf("Dashboard");
+    const employeesIndex = linkTexts.indexOf("Employees");
+
+    expect(dashboardIndex).toBeLessThan(employeesIndex);
+  });
+
   it("should display the user's name and role", () => {
     mockUseAuth.mockReturnValue({
       user: { username: "testuser", role: "user" },

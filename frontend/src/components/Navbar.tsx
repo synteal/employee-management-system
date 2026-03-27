@@ -16,7 +16,6 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Employees", path: "/", icon: <Users className="w-5 h-5 mr-2" /> },
     ...(user?.role === "admin"
       ? [
           {
@@ -26,6 +25,7 @@ const Navbar: React.FC = () => {
           },
         ]
       : []),
+    { name: "Employees", path: "/", icon: <Users className="w-5 h-5 mr-2" /> },
   ];
 
   return (
